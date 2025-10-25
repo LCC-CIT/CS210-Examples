@@ -1,0 +1,9 @@
+if,and,then,result_type
+fever,cough,suspect_flu,INTERMEDIATE
+headache,nausea,suspect_migraine,INTERMEDIATE
+suspect_flu,body_aches,diagnosis:influenza,DIAGNOSIS
+suspect_flu,sore_throat,diagnosis:common_cold,DIAGNOSIS
+suspect_migraine,light_sensitivity,diagnosis:migraine,DIAGNOSIS
+diagnosis:influenza,,recommendation:rest,RECOMMENDATION
+diagnosis:migraine,,recommendation:dark_room,RECOMMENDATION
+no_appetite,stomach_pain,diagnosis:food_poisoning,DIAGNOSIS

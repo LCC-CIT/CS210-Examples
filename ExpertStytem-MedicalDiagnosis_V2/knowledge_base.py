@@ -37,37 +37,37 @@ HARDCODED_KNOWLEDGE_BASE = [
     # Rule 3: Diagnosis Influenza
     {
         IF_KEY: {"suspect_flu", "body_aches"},
-        THEN_KEY: "diagnosis_influenza",
+        THEN_KEY: "diagnosis:influenza",
         RESULT_TYPE_KEY: RESULT_TYPE_DIAGNOSIS
     },
     # Rule 4: Diagnosis Common Cold
     {
         IF_KEY: {"suspect_flu", "sore_throat"},
-        THEN_KEY: "diagnosis_common_cold",
+        THEN_KEY: "diagnosis:common_cold",
         RESULT_TYPE_KEY: RESULT_TYPE_DIAGNOSIS
     },
     # Rule 5: Diagnosis Migraine
     {
         IF_KEY: {"suspect_migraine", "light_sensitivity"},
-        THEN_KEY: "diagnosis_migraine",
+        THEN_KEY: "diagnosis:migraine",
         RESULT_TYPE_KEY: RESULT_TYPE_DIAGNOSIS
     },
     # Rule 6: Recommendation for Influenza
     {
-        IF_KEY: {"diagnosis_influenza"},
-        THEN_KEY: "recommend_rest",
+        IF_KEY: {"diagnosis:influenza"},
+        THEN_KEY: "recommendation:rest",
         RESULT_TYPE_KEY: RESULT_TYPE_RECOMMENDATION
     },
     # Rule 7: Recommendation for Migraine
     {
-        IF_KEY: {"diagnosis_migraine"},
-        THEN_KEY: "recommend_dark_room",
+        IF_KEY: {"diagnosis:migraine"},
+        THEN_KEY: "recommendation:dark_room",
         RESULT_TYPE_KEY: RESULT_TYPE_RECOMMENDATION
     },
     # Rule 8: Diagnosis Food Poisoning
     {
         IF_KEY: {"no_appetite", "stomach_pain"},
-        THEN_KEY: "diagnosis_food_poisoning",
+        THEN_KEY: "diagnosis:food_poisoning",
         RESULT_TYPE_KEY: RESULT_TYPE_DIAGNOSIS
     },
 ]
@@ -75,28 +75,61 @@ HARDCODED_KNOWLEDGE_BASE = [
 
 def load_knowledge_base_from_csv(csv_path):
     """
-    Loads rules from a CSV file with a guaranteed lower-case header row.
-    - The value of the 'if' key is a set containing the 'if' and (if present) the 'and' value.
-    - The 'and' key is removed from each rule.
-    Returns a list of dictionaries ready for use by the inference engine.
+    Loads and parses medical diagnosis rules from a CSV file into rule dictionaries.
+
+    CSV Format Expected:
+        - Header row with columns: 'if', 'and', 'then', 'result_type'
+        - 'if': Primary condition (required for most rules)
+        - 'and': Secondary condition (optional, can be empty)
+        - 'then': Conclusion derived when conditions are met
+        - 'result_type': Classification (INTERMEDIATE, DIAGNOSIS, or RECOMMENDATION)
+    
+    Transformation Process:
+        1. Reads CSV with DictReader (assumes lowercase headers)
+        2. Combines 'if' and 'and' values into a single set stored under 'if' key
+        3. Removes the 'and' key from each rule dictionary
+        4. Returns list of transformed rule dictionaries
+    
+    Args:
+        csv_path (str): File path to the CSV file containing rules. Path can be
+            relative to the current working directory or absolute.
+    
+    Returns:
+        list: A list of rule dictionaries, each containing:
+            - 'if' (set): Set of condition facts (combined from 'if' and 'and' columns)
+            - 'then' (str): Conclusion fact derived when conditions are satisfied
+            - 'result_type' (str): Type classification of the conclusion
+            - Any other columns from CSV are preserved as additional keys
+         
+    Raises:
+        FileNotFoundError: If the CSV file does not exist at the specified path
+        csv.Error: If the CSV file is malformed or cannot be parsed
+        KeyError: If required columns are missing from the CSV header
+        UnicodeDecodeError: If the file encoding is not UTF-8 compatible
+    
+    Notes:
+        - Header row must exist and use lowercase column names
+        - The 'and' key is intentionally removed to simplify rule structure
     """
     with open(csv_path, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         rules = []
         for row in reader:
-            # Build the 'if' value set
+            # Build a set combining both 'if' and 'and' conditions
+            # This allows rules to have one or two conditions
             if_set = set()
             if row.get(IF_KEY):
                 if_set.add(row[IF_KEY])
             if row.get(AND_KEY):
                 if_set.add(row[AND_KEY])
             row[IF_KEY] = if_set
-            # Remove the 'and' key
+            # Remove the 'and' key since conditions are now combined in 'if'
             if AND_KEY in row:
                 del row[AND_KEY]
             rules.append(row)
     return rules
 
+# Load the knowledge base based on the HARD_CODED_RULES flag
 if HARD_CODED_RULES:
     KNOWLEDGE_BASE = HARDCODED_KNOWLEDGE_BASE
 else:
